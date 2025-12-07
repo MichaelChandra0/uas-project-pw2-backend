@@ -3,7 +3,8 @@ from datetime import datetime, timezone
 
 
 class Riwayat(db.Model):
-    kode_barang = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    kode_barang = db.Column(db.Integer, nullable=False)
     nama_barang = db.Column(db.String(80), nullable=False)
     kategori = db.Column(db.String(50), nullable=False)
     jumlah_stok = db.Column(db.Integer, nullable=False)
@@ -16,6 +17,7 @@ class Riwayat(db.Model):
 
     def to_json(self):
         return {
+            "id": self.id,
             "kode_barang": self.kode_barang,
             "nama_barang": self.nama_barang,
             "kategori": self.kategori,

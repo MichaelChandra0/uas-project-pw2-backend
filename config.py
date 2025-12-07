@@ -6,6 +6,7 @@ load_dotenv()
 
 class Config:
     SECRET_KEY = "projectUASPW2Kelompok"
+    SECRET_API_KEY = "jesselyncantik123"
 
     BASEDIR = os.path.abspath(os.path.dirname(__file__))
     SQLALCHEMY_DATABASE_URI = "sqlite:///" + os.path.join(BASEDIR, "inventory.db")
