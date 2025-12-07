@@ -24,7 +24,7 @@ with app.app_context():
 
 @app.route("/")
 def main():
-    return "API SEDANG BERJALAN!"
+    return "API SEDANG BERJALAN! latest 7 dec 2025"
 
 
 # MIDDLEWARE CEK API KEY
