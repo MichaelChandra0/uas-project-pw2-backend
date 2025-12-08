@@ -181,6 +181,7 @@ def masuk_barang(id):
             status="Masuk",
         )
     db.session.add(riwayat_baru)
+    riwayat.jumlah_stok += masuk
     db.session.commit()
     return jsonify(riwayat.to_json()), 200
 
@@ -191,8 +192,9 @@ def keluar_barang(id):
     riwayat = Barang.query.get(id)
     # kode_barang = barang.kode_barang
     # riwayat = Riwayat.query.get(kode_barang)
+    keluar = int(request.form.get("keluar", 0))
     if riwayat:
-        keluar = int(request.form.get("keluar", 0))
+        # update_stok =
         riwayat_baru = Riwayat(
             kode_barang=riwayat.kode_barang,
             nama_barang=riwayat.nama_barang,
@@ -205,6 +207,7 @@ def keluar_barang(id):
             status="Keluar",
         )
     db.session.add(riwayat_baru)
+    riwayat.jumlah_stok -= keluar
     db.session.commit()
     return jsonify(riwayat.to_json()), 200
 
