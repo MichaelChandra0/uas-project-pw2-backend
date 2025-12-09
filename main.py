@@ -15,7 +15,9 @@ CORS(app)
 db.init_app(app)
 
 UPLOAD_FOLDER = os.path.join(app.root_path, "static/uploads")
+# app.config["UPLOAD_FOLDER"] = os.getenv(UPLOAD_FOLDER)
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 
 with app.app_context():
     # db.drop_all()
@@ -57,10 +59,10 @@ def create_barang():
     foto_url = None
     if "foto_barang" in request.files:
         file = request.files["foto_barang"]
-        link_cloudinary = upload(
-            file, folder="barang", use_filename=True, unique_filename=False
-        )
-        foto_url = link_cloudinary["secure_url"]
+        filename = file.filename
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+        foto_url = f"/static/uploads/{filename}"
 
     barang_baru = Barang(
         kode_barang=request.form.get("kode_barang"),
