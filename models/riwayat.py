@@ -14,6 +14,7 @@ class Riwayat(db.Model):
     foto_barang = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(20), nullable=False)
     tanggal = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    selisih = db.Column(db.Integer, nullable=False)
 
     def to_json(self):
         return {
@@ -28,4 +29,5 @@ class Riwayat(db.Model):
             "foto_barang": self.foto_barang,
             "status": self.status,
             "tanggal": self.tanggal,
+            "selisih": self.selisih,
         }

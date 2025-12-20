@@ -7,6 +7,4 @@ class Admin(db.Model):
     password = db.Column(db.String(255), nullable=False)
 
     def to_json(self):
-        return {
-            "username": self.username,
-        }
+        return {"username": self.username, "password": self.password}

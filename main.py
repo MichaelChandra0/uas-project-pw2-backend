@@ -26,7 +26,7 @@ with app.app_context():
 
 @app.route("/")
 def main():
-    return "API SEDANG BERJALAN! latest 7 dec 2025"
+    return "API SEDANG BERJALAN! latest 9 dec 2025"
 
 
 # MIDDLEWARE CEK API KEY
@@ -86,6 +86,7 @@ def create_barang():
         deskripsi_barang=request.form.get("deskripsi_barang"),
         status="Masuk",
         foto_barang=foto_url,
+        selisih=0,
     )
     db.session.add(riwayat_baru)
     db.session.commit()
@@ -94,7 +95,7 @@ def create_barang():
 
 # EDIT BARANG
 @app.route("/api/barang/<int:id>", methods=["PUT"])
-def edit_barang(id):
+def get_edit_barang(id):
 
     barang = Barang.query.get(id)
     if barang:
@@ -108,14 +109,57 @@ def edit_barang(id):
             "deskripsi_barang", barang.deskripsi_barang
         )
         barang.foto_barang = request.form.get("foto_barang", barang.foto_barang)
-
+        # url_foto_riwayat = ""
         if "foto_barang" in request.files:
             file = request.files["foto_barang"]
-            link_cloudinary = upload(
-                file, folder="barang", use_filename=True, unique_filename=False
-            )
-            barang.foto_barang = link_cloudinary["secure_url"]
+            filename = file.filename
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            file.save(filepath)
+            barang.foto_barang = f"/static/uploads/{filename}"
+            # url_foto_riwayat = barang.foto_barang
+
+        riwayat_baru = Riwayat(
+            kode_barang=request.form.get("kode_barang", barang.kode_barang),
+            nama_barang=request.form.get("nama_barang", barang.nama_barang),
+            kategori=request.form.get("kategori", barang.kategori),
+            jumlah_stok=request.form.get("jumlah_stok", barang.jumlah_stok),
+            harga=request.form.get("harga", barang.harga),
+            kondisi=request.form.get("kondisi", barang.kondisi),
+            deskripsi_barang=request.form.get("deskripsi_barang", barang.kondisi),
+            status="Edited",
+            foto_barang=barang.foto_barang,
+            selisih=0,
+        )
+    db.session.add(riwayat_baru)
     db.session.commit()
+
+    return jsonify(barang.to_json()), 200
+
+
+# EDIT BARANG
+@app.route("/api/barang/<int:id>", methods=["GET"])
+def edit_barang(id):
+
+    barang = Barang.query.get(id)
+    # if barang:
+
+    #     barang.nama_barang = request.form.get("nama_barang", barang.nama_barang)
+    #     barang.kategori = request.form.get("kategori", barang.kategori)
+    #     barang.jumlah_stok = request.form.get("jumlah_stok", barang.jumlah_stok)
+    #     barang.harga = request.form.get("harga", barang.harga)
+    #     barang.kondisi = request.form.get("kondisi", barang.kondisi)
+    #     barang.deskripsi_barang = request.form.get(
+    #         "deskripsi_barang", barang.deskripsi_barang
+    #     )
+    #     barang.foto_barang = request.form.get("foto_barang", barang.foto_barang)
+
+    #     if "foto_barang" in request.files:
+    #         file = request.files["foto_barang"]
+    #         filename = file.filename
+    #         filepath = os.path.join(UPLOAD_FOLDER, filename)
+    #         file.save(filepath)
+    #         barang.foto_barang = f"/static/uploads/{filename}"
+    # db.session.commit()
 
     return jsonify(barang.to_json()), 200
 
@@ -169,7 +213,9 @@ def get_riwayat():
 @app.route("/api/riwayat/masuk/<int:id>", methods=["POST"])
 def masuk_barang(id):
     riwayat = Barang.query.get(id)
-    masuk = int(request.form.get("masuk", 0))
+    data = request.get_json()
+    angka = data.get("jumlah")
+    masuk = angka if angka else 0
     if riwayat:
         riwayat_baru = Riwayat(
             kode_barang=riwayat.kode_barang,
@@ -181,6 +227,7 @@ def masuk_barang(id):
             deskripsi_barang=riwayat.deskripsi_barang,
             foto_barang=riwayat.foto_barang,
             status="Masuk",
+            selisih=masuk,
         )
     db.session.add(riwayat_baru)
     riwayat.jumlah_stok += masuk
@@ -194,7 +241,10 @@ def keluar_barang(id):
     riwayat = Barang.query.get(id)
     # kode_barang = barang.kode_barang
     # riwayat = Riwayat.query.get(kode_barang)
-    keluar = int(request.form.get("keluar", 0))
+    data = request.get_json()
+    angka = data.get("jumlah")
+    print(angka)
+    keluar = angka if angka else 0
     if riwayat:
         # update_stok =
         riwayat_baru = Riwayat(
@@ -207,6 +257,7 @@ def keluar_barang(id):
             deskripsi_barang=riwayat.deskripsi_barang,
             foto_barang=riwayat.foto_barang,
             status="Keluar",
+            selisih=keluar,
         )
     db.session.add(riwayat_baru)
     riwayat.jumlah_stok -= keluar
@@ -214,9 +265,43 @@ def keluar_barang(id):
     return jsonify(riwayat.to_json()), 200
 
 
-@app.route("/api/admin")
+@app.route("/api/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    user = Admin.query.filter_by(
+        username=data["username"], password=data["password"]
+    ).first()
+
+    if user:
+        return jsonify({"isLogin": True, "username": data["username"]}), 200
+    else:
+        return jsonify({"isLogin": False}), 401
+
+
+@app.route("/api/admin", methods=["POST"])
 def admin():
+    # admin = Admin.query.all()
+    data = request.get_json()
+    tambah_admin = Admin(username=data["username"], password=data["password"])
+    db.session.add(tambah_admin)
+    db.session.commit()
+    # return jsonify([a.to_json() for a in admin]), 200
+    return "berhasil menambah admin"
+
+
+@app.route("/api/admin-cek")
+def cek_admin():
     admin = Admin.query.all()
+    return jsonify([a.to_json() for a in admin]), 200
+
+
+@app.route("/api/delete-admin/<int:id>", methods=["DELETE"])
+def delete_admin(id):
+    admin = Admin.query.get(id)
+    if admin:
+        db.session.delete(admin)
+        db.session.commit()
+        return "berhasil delete admin"
 
 
 if __name__ == "__main__":
